@@ -46,7 +46,8 @@ GitRepository::repo_path(const std::string &path)
 std::filesystem::path
 GitRepository::repo_file(const std::string &path, bool mkdir)
 {
-	auto fullpath = repo_dir(path, mkdir);
+	auto parentpath = std::filesystem::path(path).parent_path();
+	auto fullpath = repo_dir(parentpath, mkdir);
 	if (fullpath.empty())
 		return fullpath;
 	return repo_path(path);
@@ -66,10 +67,6 @@ GitRepository::repo_dir(const std::string &path, bool mkdir)
 		{
 			throw std::filesystem::filesystem_error("Not a directory: " + fullpath.string(), std::error_code());
 		}
-	}
-	else
-	{
-		return std::filesystem::path();
 	}
 
 	if (mkdir)
