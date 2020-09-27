@@ -8,23 +8,23 @@
 GitRepository::GitRepository(const std::string &path, bool force)
 {
 	m_worktree = path;
-	m_gitdir = std::filesystem::path(path) / ".git";
+	m_gitdir = fs::path(path) / ".git";
 
-	if (!(force || std::filesystem::is_directory(m_gitdir)))
+	if (!(force || fs::is_directory(m_gitdir)))
 	{
-		throw std::filesystem::filesystem_error("Not a git repository: " + m_gitdir.string(), std::error_code());
+		throw fs::filesystem_error("Not a git repository: " + m_gitdir.string(), std::error_code());
 	}
 
 	// Read configuration file in .git/config
 	ConfigParser conf;
 	auto confpath = repo_file("config");
-	if (std::filesystem::exists(confpath))
+	if (fs::exists(confpath))
 	{
 		conf.read(confpath.string());
 	}
 	else if (!force)
 	{
-		throw std::filesystem::filesystem_error("Configuration file missing", std::error_code());
+		throw fs::filesystem_error("Configuration file missing", std::error_code());
 	}
 
 	if (!force)
@@ -32,49 +32,49 @@ GitRepository::GitRepository(const std::string &path, bool force)
 		std::string vers = conf.get("core", "repositoryformatversion");
 		if (vers != "0")
 		{
-			throw std::filesystem::filesystem_error("Unsupported repositoryformatversion: " + vers, std::error_code());
+			throw fs::filesystem_error("Unsupported repositoryformatversion: " + vers, std::error_code());
 		}
 	}
 }
 
-std::filesystem::path
+fs::path
 GitRepository::repo_path(const std::string &path)
 {
 	return m_gitdir / path;
 }
 
-std::filesystem::path
+fs::path
 GitRepository::repo_file(const std::string &path, bool mkdir)
 {
-	auto parentpath = std::filesystem::path(path).parent_path();
+	auto parentpath = fs::path(path).parent_path();
 	auto fullpath = repo_dir(parentpath, mkdir);
 	if (fullpath.empty())
 		return fullpath;
 	return repo_path(path);
 }
 
-std::filesystem::path
+fs::path
 GitRepository::repo_dir(const std::string &path, bool mkdir)
 {
 	auto fullpath = repo_path(path);
-	if (std::filesystem::exists(fullpath))
+	if (fs::exists(fullpath))
 	{
-		if (std::filesystem::is_directory(fullpath))
+		if (fs::is_directory(fullpath))
 		{
 			return fullpath;
 		}
 		else
 		{
-			throw std::filesystem::filesystem_error("Not a directory: " + fullpath.string(), std::error_code());
+			throw fs::filesystem_error("Not a directory: " + fullpath.string(), std::error_code());
 		}
 	}
 
 	if (mkdir)
 	{
-		std::filesystem::create_directories(fullpath);
+		fs::create_directories(fullpath);
 		return fullpath;
 	}
-	return std::filesystem::path();
+	return fs::path();
 }
 
 GitRepository
@@ -84,20 +84,20 @@ GitRepository::repo_create(const std::string path)
 
 	// First, we make sure the path either doesn't exist or is an
     	// empty dir.
-	if (std::filesystem::exists(repo.m_worktree))
+	if (fs::exists(repo.m_worktree))
 	{
-		if (!std::filesystem::is_directory(repo.m_worktree))
+		if (!fs::is_directory(repo.m_worktree))
 		{
-			throw std::filesystem::filesystem_error(repo.m_worktree + " is not a directory", std::error_code());
+			throw fs::filesystem_error(repo.m_worktree + " is not a directory", std::error_code());
 		}
-		if (!std::filesystem::is_empty(repo.m_worktree))
+		if (!fs::is_empty(repo.m_worktree))
 		{
-			throw std::filesystem::filesystem_error(repo.m_worktree + " is not empty", std::error_code());
+			throw fs::filesystem_error(repo.m_worktree + " is not empty", std::error_code());
 		}
 	}
 	else
 	{
-		std::filesystem::create_directories(repo.m_worktree);
+		fs::create_directories(repo.m_worktree);
 	}
 
 	const std::vector<std::string> dirs = {"branches", "objects", "refs/tags", "refs/heads"};
@@ -105,7 +105,7 @@ GitRepository::repo_create(const std::string path)
 	{
 		if (repo.repo_dir(dir, true).empty())
 		{
-			throw std::filesystem::filesystem_error("Failed to create directory: " + dir, std::error_code());
+			throw fs::filesystem_error("Failed to create directory: " + dir, std::error_code());
 		}
 	}
 
@@ -142,9 +142,9 @@ GitRepository::repo_default_config()
 GitRepository
 GitRepository::repo_find(const std::string &path, bool required)
 {
-	auto p = std::filesystem::path(path);
+	auto p = fs::path(path);
 	auto dir = p / ".git";
-	if (std::filesystem::exists(dir))
+	if (fs::exists(dir))
 	{
 		return GitRepository::repo_create(p.string());
 	}
@@ -157,7 +157,7 @@ GitRepository::repo_find(const std::string &path, bool required)
 		// parent of "/" is "/".
 		// if parent == path, then path is root.
 		if (required)
-			throw std::filesystem::filesystem_error("Not a git directory ", std::error_code());
+			throw fs::filesystem_error("Not a git directory ", std::error_code());
 		else
 			return GitRepository(std::string());
 	}

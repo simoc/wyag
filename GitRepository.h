@@ -2,7 +2,13 @@
 #define GIT_REPOSITORY_H
 
 #include <string>
+#if __GNUC__ >= 9
 #include <filesystem>
+namespace fs = std::filesystem;
+#else
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#endif
 
 #include "ConfigParser.h"
 
@@ -23,17 +29,17 @@ public:
 
 private:
 	std::string m_worktree;
-	std::filesystem::path m_gitdir;
+	fs::path m_gitdir;
 
 	//! Compute path under repo's gitdir.
-	std::filesystem::path repo_path(const std::string &path);
+	fs::path repo_path(const std::string &path);
 
 	//! Same as repo_path, but create dirname(path) if absent.
-	std::filesystem::path repo_file(const std::string &path,
+	fs::path repo_file(const std::string &path,
 		bool mkdir = false);
 
 	//! Same as repo_path, but mkdir(path) if absent.
-	std::filesystem::path repo_dir(const std::string &path,
+	fs::path repo_dir(const std::string &path,
 		bool mkdir = false);
 
 	//! Get default configuration for new repository.
