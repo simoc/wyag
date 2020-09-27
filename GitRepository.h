@@ -17,6 +17,10 @@ public:
 	//! Create a new repository at path.
 	static GitRepository repo_create(const std::string path);
 
+	//! Search up through directory tree for repo's gitdir
+	static GitRepository repo_find(const std::string &path = ".",
+		bool required = true);
+
 private:
 	std::string m_worktree;
 	std::filesystem::path m_gitdir;

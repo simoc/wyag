@@ -138,3 +138,30 @@ GitRepository::repo_default_config()
 	ret.set("core", "bare", "false");
 	return ret;
 }
+
+GitRepository
+GitRepository::repo_find(const std::string &path, bool required)
+{
+	auto p = std::filesystem::path(path);
+	auto dir = p / ".git";
+	if (std::filesystem::exists(dir))
+	{
+		return GitRepository::repo_create(p.string());
+	}
+
+	// If we haven't returned, recurse in parent
+	auto parentpath = p.parent_path();
+	if (parentpath == p)
+	{
+		// Bottom case
+		// parent of "/" is "/".
+		// if parent == path, then path is root.
+		if (required)
+			throw std::filesystem::filesystem_error("Not a git directory ", std::error_code());
+		else
+			return GitRepository(std::string());
+	}
+
+	// Recursive case
+	return repo_find(parentpath.string(), required);
+}
