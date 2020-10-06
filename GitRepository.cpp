@@ -1,9 +1,22 @@
 #include <exception>
 #include <fstream>
 #include <vector>
+#include <algorithm>
+#include <iostream>
 
 #include "GitRepository.h"
 #include "ConfigParser.h"
+
+#include "zlib.h"
+
+const std::map<std::string, std::string> GitRepository::m_object_types =
+{
+	//TODO implement these classes in a later chapter
+	{"commit", "GitCommit"},
+	{"tree", "GitTree"},
+	{"tag", "GitTag"},
+	{"blob", "GitBlob"}
+};
 
 GitRepository::GitRepository(const std::string &path, bool force)
 {
@@ -164,4 +177,67 @@ GitRepository::repo_find(const std::string &path, bool required)
 
 	// Recursive case
 	return repo_find(parentpath.string(), required);
+}
+
+std::vector<unsigned char>
+GitRepository::uncompress_bytes(const std::vector<unsigned char> &bytes)
+{
+	std::vector<unsigned char> uncompressed;
+	uncompressed.resize(bytes.size() * 2);
+
+	uLong uncompressed_size = uncompressed.size();
+	if (uncompress(uncompressed.data(), &uncompressed_size,
+		bytes.data(), bytes.size()) == Z_OK)
+	{
+		uncompressed.resize(uncompressed_size);
+	}
+	else
+	{
+		uncompressed.clear();
+	}
+
+	return uncompressed;
+}
+
+GitObject *
+GitRepository::object_read(const std::string &sha)
+{
+	std::vector<unsigned char> bytes;
+	if (sha.size() >= 2)
+	{
+		std::string objpath = "objects/" +
+			sha.substr(0, 2) + "/" + sha.substr(2);
+
+		auto path = repo_file(objpath);
+		std::ifstream f(path.string(), std::ios::binary);
+		if (f.is_open())
+		{
+			unsigned char ch = f.get();
+			while (f.good())
+			{
+				bytes.push_back(ch);
+				ch = f.get();
+			}
+			bytes = uncompress_bytes(bytes);
+			auto it1 = std::find(bytes.begin(), bytes.end(), ' ');
+			if (it1 != bytes.end())
+			{
+				std::string fmt(bytes.begin(), it1);
+				auto it2 = std::find(it1, bytes.end(), '\0');
+				std::string size;
+				if (it2 != bytes.end())
+				{
+					size = std::string(it1 + 1, it2);
+				}
+
+				auto it3 = m_object_types.find(fmt);
+				if (it3 != m_object_types.end())
+				{
+					std::cout << fmt << " " << size << std::endl;
+				}
+			}
+			f.close();
+		}
+	}
+	return nullptr;
 }

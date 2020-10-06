@@ -2,6 +2,8 @@
 #define GIT_REPOSITORY_H
 
 #include <string>
+#include <vector>
+#include <map>
 #if __GNUC__ >= 9
 #include <filesystem>
 namespace fs = std::filesystem;
@@ -11,6 +13,8 @@ namespace fs = std::experimental::filesystem;
 #endif
 
 #include "ConfigParser.h"
+
+class GitObject;
 
 /*
  * \brief A git repository
@@ -26,6 +30,9 @@ public:
 	//! Search up through directory tree for repo's gitdir
 	static GitRepository repo_find(const std::string &path = ".",
 		bool required = true);
+
+	//! Read object object_id from Git repository repo.
+	GitObject *object_read(const std::string &sha);
 
 private:
 	std::string m_worktree;
@@ -44,6 +51,12 @@ private:
 
 	//! Get default configuration for new repository.
 	ConfigParser repo_default_config();
+
+	//! Decompress zlib compressed bytes
+	std::vector<unsigned char> uncompress_bytes(const std::vector<unsigned char> &bytes);
+
+	//! Lookup table for object types
+	static const std::map<std::string, std::string> m_object_types;
 };
 
 #endif
