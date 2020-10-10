@@ -34,6 +34,9 @@ public:
 	//! Read object object_id from Git repository repo.
 	GitObject *object_read(const std::string &sha);
 
+	//! Write object to Git repository repo.
+	std::string object_write(GitObject *obj, bool actually_write = true);
+
 private:
 	std::string m_worktree;
 	fs::path m_gitdir;
@@ -51,6 +54,9 @@ private:
 
 	//! Get default configuration for new repository.
 	ConfigParser repo_default_config();
+
+	//! Compress bytes using zlib
+	std::vector<unsigned char> compress_bytes(const std::vector<unsigned char> &bytes);
 
 	//! Decompress zlib compressed bytes
 	std::vector<unsigned char> uncompress_bytes(const std::vector<unsigned char> &bytes);

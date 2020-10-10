@@ -5,9 +5,11 @@
 #include <iostream>
 
 #include "GitRepository.h"
+#include "GitObject.h"
 #include "ConfigParser.h"
 
 #include "zlib.h"
+#include <openssl/sha.h>
 
 const std::map<std::string, std::string> GitRepository::m_object_types =
 {
@@ -180,6 +182,26 @@ GitRepository::repo_find(const std::string &path, bool required)
 }
 
 std::vector<unsigned char>
+GitRepository::compress_bytes(const std::vector<unsigned char> &bytes)
+{
+	std::vector<unsigned char> compressed;
+	compressed.resize(bytes.size() * 2);
+
+	uLong compressed_size = compressed.size();
+	if (compress(compressed.data(), &compressed_size,
+		bytes.data(), bytes.size()) == Z_OK)
+	{
+		compressed.resize(compressed_size);
+	}
+	else
+	{
+		compressed.clear();
+	}
+
+	return compressed;
+}
+
+std::vector<unsigned char>
 GitRepository::uncompress_bytes(const std::vector<unsigned char> &bytes)
 {
 	std::vector<unsigned char> uncompressed;
@@ -240,4 +262,53 @@ GitRepository::object_read(const std::string &sha)
 		}
 	}
 	return nullptr;
+}
+
+std::string
+GitRepository::object_write(GitObject *obj, bool actually_write)
+{
+	// Serialize object data
+	std::vector<unsigned char> data = obj->serialize();
+
+	// Add header
+	std::string header = obj->get_format() + " " + std::to_string(data.size());
+	std::vector<unsigned char> result;
+	for (const char &c : header)
+	{
+		result.push_back(c);
+	}
+	result.push_back('\0');
+	for (const char &c : data)
+	{
+		result.push_back(c);
+	}
+
+	// Compute hash
+	std::ostringstream hex_digits;
+	unsigned char md[SHA_DIGEST_LENGTH] = {0};
+	SHA1(result.data(), result.size(), md);
+	for (int i = 0; i < sizeof(md); i++)
+	{
+		hex_digits << std::hex << std::setw(2) <<
+			std::setfill('0') << static_cast<unsigned int>(md[i]);
+	}
+	std::string sha = hex_digits.str();
+
+	if (actually_write)
+	{
+		// Compute path
+		std::string objpath = "objects/" +
+			sha.substr(0, 2) + "/" + sha.substr(2);
+		auto path = repo_file(objpath, actually_write);
+
+		std::ofstream f(path.string(), std::ios::binary);
+		if (f.is_open())
+		{
+			auto bytes = compress_bytes(result);
+			f.write(reinterpret_cast<char *>(bytes.data()), bytes.size());
+			f.close();
+		}
+	}
+
+	return sha;
 }
