@@ -1,31 +1,32 @@
 #include <iostream>
 #include <string>
+#include <vector>
 #include <exception>
 
 #include "GitRepository.h"
 #include "GitObject.h"
 
 int
-cmd_init(int argc, char *argv[])
+cmd_init(const std::vector<std::string> &args)
 {
 	std::string path(".");
-	if (argc > 2)
-		path = argv[2];
+	if (args.size() > 2)
+		path = args.at(2);
 
 	GitRepository::repo_create(path);
 	return(0);
 }
 
 int
-cmd_cat_file(int argc, char *argv[])
+cmd_cat_file(const std::vector<std::string> &args)
 {
 	int status = 0;
 	std::string type;
 	std::string sha;
-	if (argc > 3)
+	if (args.size() > 3)
 	{
-		type = argv[2];
-		sha = argv[3];
+		type = args.at(2);
+		sha = args.at(3);
 
 		GitRepository repo = GitRepository::repo_find();
 		auto obj = repo.object_read(sha);
@@ -46,7 +47,7 @@ cmd_cat_file(int argc, char *argv[])
 	}
 	else
 	{
-		std::cerr << "Usage: " << argv[0] << " " << argv[1] <<
+		std::cerr << "Usage: " << args.at(0) << " " << args.at(1) <<
 			" type object" << std::endl;
 		status = 1;
 	}
@@ -54,23 +55,23 @@ cmd_cat_file(int argc, char *argv[])
 }
 
 int
-process(int argc, char *argv[])
+process(const std::vector<std::string> &args)
 {
 	int status = 0;
-	if (argc < 2)
+	if (args.size() < 2)
 	{
-		std::cerr << "Usage: " << argv[0] << " <command>" << std::endl;
+		std::cerr << "Usage: " << args.at(0) << " <command>" << std::endl;
 		return(1);
 	}
 
-	std::string command = argv[1];
+	std::string command = args.at(1);
 	if (command == "init")
 	{
-		status = cmd_init(argc, argv);
+		status = cmd_init(args);
 	}
 	else if (command == "cat-file")
 	{
-		status = cmd_cat_file(argc, argv);
+		status = cmd_cat_file(args);
 	}
 	else
 	{
@@ -86,7 +87,12 @@ main(int argc, char *argv[])
 	int status = 0;
 	try
 	{
-		status = process(argc, argv);
+		std::vector<std::string> args;
+		for (int i = 0; i < argc; i++)
+		{
+			args.push_back(argv[i]);
+		}
+		status = process(args);
 	}
 	catch (const std::exception &e)
 	{
