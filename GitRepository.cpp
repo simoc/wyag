@@ -7,19 +7,11 @@
 
 #include "GitRepository.h"
 #include "GitObject.h"
+#include "GitBlob.h"
 #include "ConfigParser.h"
 
 #include "zlib.h"
 #include <openssl/sha.h>
-
-const std::map<std::string, std::string> GitRepository::m_object_types =
-{
-	//TODO implement these classes in a later chapter
-	{"commit", "GitCommit"},
-	{"tree", "GitTree"},
-	{"tag", "GitTag"},
-	{"blob", "GitBlob"}
-};
 
 GitRepository::GitRepository(const std::string &path, bool force)
 {
@@ -162,7 +154,7 @@ GitRepository::repo_find(const std::string &path, bool required)
 	auto dir = p / ".git";
 	if (fs::exists(dir))
 	{
-		return GitRepository::repo_create(p.string());
+		return GitRepository(p.string());
 	}
 
 	// If we haven't returned, recurse in parent
@@ -206,13 +198,29 @@ std::vector<unsigned char>
 GitRepository::uncompress_bytes(const std::vector<unsigned char> &bytes)
 {
 	std::vector<unsigned char> uncompressed;
-	uncompressed.resize(bytes.size() * 2);
+	uncompressed.resize(bytes.size() * 10);
 
 	uLong uncompressed_size = uncompressed.size();
-	if (uncompress(uncompressed.data(), &uncompressed_size,
-		bytes.data(), bytes.size()) == Z_OK)
+	int status = uncompress(uncompressed.data(), &uncompressed_size,
+		bytes.data(), bytes.size());
+	if (status == Z_OK)
 	{
 		uncompressed.resize(uncompressed_size);
+	}
+	else if (status == Z_BUF_ERROR)
+	{
+		// Try uncompressing again with a bigger buffer
+		uncompressed.resize(bytes.size() * 100);
+		status = uncompress(uncompressed.data(), &uncompressed_size,
+			bytes.data(), bytes.size());
+		if (status == Z_OK)
+		{
+			uncompressed.resize(uncompressed_size);
+		}
+		else
+		{
+			uncompressed.clear();
+		}
 	}
 	else
 	{
@@ -222,7 +230,7 @@ GitRepository::uncompress_bytes(const std::vector<unsigned char> &bytes)
 	return uncompressed;
 }
 
-GitObject *
+std::shared_ptr<GitObject>
 GitRepository::object_read(const std::string &sha)
 {
 	std::vector<unsigned char> bytes;
@@ -241,6 +249,8 @@ GitRepository::object_read(const std::string &sha)
 				bytes.push_back(ch);
 				ch = f.get();
 			}
+			f.close();
+
 			bytes = uncompress_bytes(bytes);
 			auto it1 = std::find(bytes.begin(), bytes.end(), ' ');
 			if (it1 != bytes.end())
@@ -248,25 +258,31 @@ GitRepository::object_read(const std::string &sha)
 				std::string fmt(bytes.begin(), it1);
 				auto it2 = std::find(it1, bytes.end(), '\0');
 				std::string size;
+				std::vector<unsigned char> data;
 				if (it2 != bytes.end())
 				{
 					size = std::string(it1 + 1, it2);
+					data = std::vector<unsigned char>(it2 + 1, bytes.end());
 				}
 
-				auto it3 = m_object_types.find(fmt);
-				if (it3 != m_object_types.end())
+				if (fmt == "blob")
 				{
-					std::cout << fmt << " " << size << std::endl;
+					std::shared_ptr<GitObject> obj(new GitBlob(this));
+					obj->deserialize(data);
+					return obj;
+				}
+				else
+				{
+					std::cerr << "fmt: " << fmt << std::endl;
 				}
 			}
-			f.close();
 		}
 	}
 	return nullptr;
 }
 
 std::string
-GitRepository::object_write(GitObject *obj, bool actually_write)
+GitRepository::object_write(std::shared_ptr<GitObject> obj, bool actually_write)
 {
 	// Serialize object data
 	std::vector<unsigned char> data = obj->serialize();

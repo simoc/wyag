@@ -3,7 +3,7 @@
 
 #include <string>
 #include <vector>
-#include <map>
+#include <memory>
 #if __GNUC__ >= 9
 #include <filesystem>
 namespace fs = std::filesystem;
@@ -32,10 +32,10 @@ public:
 		bool required = true);
 
 	//! Read object object_id from Git repository repo.
-	GitObject *object_read(const std::string &sha);
+	std::shared_ptr<GitObject> object_read(const std::string &sha);
 
 	//! Write object to Git repository repo.
-	std::string object_write(GitObject *obj, bool actually_write = true);
+	std::string object_write(std::shared_ptr<GitObject> obj, bool actually_write = true);
 
 private:
 	std::string m_worktree;
@@ -60,9 +60,6 @@ private:
 
 	//! Decompress zlib compressed bytes
 	std::vector<unsigned char> uncompress_bytes(const std::vector<unsigned char> &bytes);
-
-	//! Lookup table for object types
-	static const std::map<std::string, std::string> m_object_types;
 };
 
 #endif
