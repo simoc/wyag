@@ -1,3 +1,4 @@
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -55,6 +56,55 @@ cmd_cat_file(const std::vector<std::string> &args)
 }
 
 int
+cmd_hash_object(const std::vector<std::string> &args)
+{
+	int status = 0;
+	std::string type("blob");
+	bool write = false;
+	int index = 2;
+	while (index < args.size())
+	{
+		if (args.at(index) == "-w")
+		{
+			write = true;
+			index++;
+		}
+		else if (args.at(index) == "-t" && index + 1 < args.size())
+		{
+			type = args.at(index + 1);
+			index += 2;
+		}
+		else
+		{
+			break;
+		}
+	}
+	if (index < args.size())
+	{
+		std::string filename = args.at(index);
+		std::ifstream f(filename, std::ios::binary);
+		if (f.is_open())
+		{
+			GitRepository repo = GitRepository::repo_find();
+			std::string sha = repo.object_hash(f, type, write);
+			std::cout << sha << std::endl;
+		}
+		else
+		{
+			std::cerr << "File not found: " << filename << std::endl;
+			status = 1;
+		}
+	}
+	else
+	{
+		std::cerr << "Usage: " << args.at(0) << " " << args.at(1) <<
+			" type object" << std::endl;
+		status = 1;
+	}
+	return status;
+}
+
+int
 process(const std::vector<std::string> &args)
 {
 	int status = 0;
@@ -72,6 +122,10 @@ process(const std::vector<std::string> &args)
 	else if (command == "cat-file")
 	{
 		status = cmd_cat_file(args);
+	}
+	else if (command == "hash-object")
+	{
+		status = cmd_hash_object(args);
 	}
 	else
 	{

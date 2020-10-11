@@ -37,6 +37,9 @@ public:
 	//! Write object to Git repository repo.
 	std::string object_write(std::shared_ptr<GitObject> obj, bool actually_write = true);
 
+	//! Generate hash for file and optionally write file to repo.
+	std::string object_hash(std::ifstream &f, const std::string &fmt, bool actually_write = false);
+
 private:
 	std::string m_worktree;
 	fs::path m_gitdir;

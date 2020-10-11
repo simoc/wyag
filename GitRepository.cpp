@@ -329,3 +329,33 @@ GitRepository::object_write(std::shared_ptr<GitObject> obj, bool actually_write)
 
 	return sha;
 }
+
+std::string
+GitRepository::object_hash(std::ifstream &f, const std::string &fmt,
+	bool actually_write)
+{
+	std::string sha;
+	if (f.is_open())
+	{
+		std::vector<unsigned char> bytes;
+		unsigned char ch = f.get();
+		while (f.good())
+		{
+			bytes.push_back(ch);
+			ch = f.get();
+		}
+
+		if (fmt == "blob")
+		{
+			std::shared_ptr<GitObject> obj(new GitBlob(this));
+			obj->deserialize(bytes);
+			sha = object_write(obj, actually_write);
+		}
+		else
+		{
+			//TODO implement other object types when available
+			std::cerr << "fmt: " << fmt << std::endl;
+		}
+	}
+	return sha;
+}
