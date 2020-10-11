@@ -3,6 +3,7 @@
 #include <vector>
 #include <algorithm>
 #include <iostream>
+#include <iomanip>
 
 #include "GitRepository.h"
 #include "GitObject.h"
