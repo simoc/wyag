@@ -304,7 +304,7 @@ GitRepository::object_write(std::shared_ptr<GitObject> obj, bool actually_write)
 	std::ostringstream hex_digits;
 	unsigned char md[SHA_DIGEST_LENGTH] = {0};
 	SHA1(result.data(), result.size(), md);
-	for (int i = 0; i < sizeof(md); i++)
+	for (size_t i = 0; i < sizeof(md); i++)
 	{
 		hex_digits << std::hex << std::setw(2) <<
 			std::setfill('0') << static_cast<unsigned int>(md[i]);

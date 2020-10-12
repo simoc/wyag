@@ -1,6 +1,7 @@
 
 CXXFLAGS+=-std=c++17
 CXXFLAGS+=-g
+CXXFLAGS+=-Wall
 
 LIBS+=-lstdc++
 LIBS+=-lz

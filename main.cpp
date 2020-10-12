@@ -61,7 +61,7 @@ cmd_hash_object(const std::vector<std::string> &args)
 	int status = 0;
 	std::string type("blob");
 	bool write = false;
-	int index = 2;
+	size_t index = 2;
 	while (index < args.size())
 	{
 		if (args.at(index) == "-w")
