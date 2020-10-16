@@ -8,6 +8,7 @@
 #include "GitRepository.h"
 #include "GitObject.h"
 #include "GitBlob.h"
+#include "GitCommit.h"
 #include "ConfigParser.h"
 
 #include "zlib.h"
@@ -271,6 +272,12 @@ GitRepository::object_read(const std::string &sha)
 					obj->deserialize(data);
 					return obj;
 				}
+				else if (fmt == "commit")
+				{
+					std::shared_ptr<GitObject> obj(new GitCommit(this));
+					obj->deserialize(data);
+					return obj;
+				}
 				else
 				{
 					std::cerr << "fmt: " << fmt << std::endl;
@@ -351,6 +358,12 @@ GitRepository::object_hash(std::ifstream &f, const std::string &fmt,
 			obj->deserialize(bytes);
 			sha = object_write(obj, actually_write);
 		}
+		else if (fmt == "commit")
+		{
+			std::shared_ptr<GitObject> obj(new GitCommit(this));
+			obj->deserialize(bytes);
+			sha = object_write(obj, actually_write);
+		}
 		else
 		{
 			//TODO implement other object types when available
@@ -358,4 +371,12 @@ GitRepository::object_hash(std::ifstream &f, const std::string &fmt,
 		}
 	}
 	return sha;
+}
+
+std::string
+GitRepository::object_find(const std::string &name,
+	const std::string &fmt,
+	bool follow)
+{
+	return name;
 }

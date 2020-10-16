@@ -40,6 +40,10 @@ public:
 	//! Generate hash for file and optionally write file to repo.
 	std::string object_hash(std::ifstream &f, const std::string &fmt, bool actually_write = false);
 
+	std::string object_find(const std::string &name,
+		const std::string &fmt = "",
+		bool follow = true);
+
 private:
 	std::string m_worktree;
 	fs::path m_gitdir;
