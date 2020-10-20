@@ -5,7 +5,7 @@
 
 #include "GitObject.h"
 
-/*
+/**
  * \brief implements Commit objects in git Repository
  */
 class GitCommit : public GitObject

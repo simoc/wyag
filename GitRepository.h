@@ -16,7 +16,7 @@ namespace fs = std::experimental::filesystem;
 
 class GitObject;
 
-/*
+/**
  * \brief A git repository
  */
 class GitRepository

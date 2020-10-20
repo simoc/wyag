@@ -1,5 +1,6 @@
 #include <fstream>
 #include <iostream>
+#include <iomanip>
 #include <string>
 #include <set>
 #include <vector>
@@ -9,6 +10,7 @@
 #include "GitRepository.h"
 #include "GitObject.h"
 #include "GitCommit.h"
+#include "GitTree.h"
 
 int
 cmd_init(const std::vector<std::string> &args)
@@ -172,6 +174,54 @@ cmd_log(const std::vector<std::string> &args)
 }
 
 int
+cmd_ls_tree(const std::vector<std::string> &args)
+{
+	int status = 0;
+	if (args.size() > 2)
+	{
+		std::string name = args.at(2);
+
+		GitRepository repo = GitRepository::repo_find();
+		auto obj = repo.object_read(repo.object_find(name, "tree"));
+		if (obj == nullptr)
+		{
+			std::cerr << "Object not found: " << name << std::endl;
+			return 1;
+		}
+		if (obj->get_format() != "tree")
+		{
+			std::cerr << "Not a tree object: " << name << std::endl;
+			return 1;
+		}
+		auto items = std::dynamic_pointer_cast<GitTree>(obj)->get_items();
+		for (const auto &item : items)
+		{
+			std::cout << std::setw(6) << std::setfill('0') <<
+				item.mode;
+
+			// Git's ls-tree displays the type
+			// of the object pointed to.  We can do that too :)
+			obj = repo.object_read(item.sha);
+			if (obj == nullptr)
+			{
+				std::cerr << "Object not found: " << item.sha << std::endl;
+				return 1;
+			}
+			std::cout << " " << obj->get_format() <<
+				" " << item.sha << "\t" <<
+				item.path << std::endl;
+		}
+	}
+	else
+	{
+		std::cerr << "Usage: " << args.at(0) << " " << args.at(1) <<
+			" object" << std::endl;
+		status = 1;
+	}
+	return status;
+}
+
+int
 process(const std::vector<std::string> &args)
 {
 	int status = 0;
@@ -197,6 +247,10 @@ process(const std::vector<std::string> &args)
 	else if (command == "log")
 	{
 		status = cmd_log(args);
+	}
+	else if (command == "ls-tree")
+	{
+		status = cmd_ls_tree(args);
 	}
 	else
 	{
