@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <tuple>
+#include <iomanip>
 
 #include "GitTree.h"
 #include "GitException.h"
