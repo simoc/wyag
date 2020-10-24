@@ -393,3 +393,36 @@ GitRepository::object_find(const std::string &name,
 {
 	return name;
 }
+
+void
+GitRepository::tree_checkout(std::shared_ptr<GitObject> obj, const std::string &path)
+{
+	if (obj->get_format() != "tree")
+		return;
+
+	auto tree = std::dynamic_pointer_cast<GitTree>(obj);
+	for (const auto &item : tree->get_items())
+	{
+		auto obj2 = object_read(item.sha);
+		auto dest = fs::path(path) / item.path;
+
+		if (obj2 == nullptr)
+		{
+			std::cerr << "Object not found: " << item.sha << std::endl;
+		}
+		else if (obj2->get_format() == "tree")
+		{
+			fs::create_directories(dest);
+			tree_checkout(obj2, dest.string());
+		}
+		else if (obj2->get_format() == "blob")
+		{
+			std::ofstream f(dest.string(), std::ios::binary);
+			if (f.is_open())
+			{
+				auto blobdata = obj2->serialize();
+				f.write(reinterpret_cast<char *>(blobdata.data()), blobdata.size());
+			}
+		}
+	}
+}

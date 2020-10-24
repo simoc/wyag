@@ -222,6 +222,66 @@ cmd_ls_tree(const std::vector<std::string> &args)
 }
 
 int
+cmd_checkout(const std::vector<std::string> &args)
+{
+	int status = 0;
+	if (args.size() > 3)
+	{
+		std::string commit = args.at(2);
+		std::string path = args.at(3);
+
+		GitRepository repo = GitRepository::repo_find();
+		auto obj = repo.object_read(repo.object_find(commit, "tree"));
+		if (obj == nullptr)
+		{
+			std::cerr << "Object not found: " << commit << std::endl;
+			return 1;
+		}
+		// If the object is a commit, we grab its tree
+		if (obj->get_format() == "commit")
+		{
+			auto tree = std::dynamic_pointer_cast<GitCommit>(obj)->get_value("tree");
+			if (tree.empty())
+			{
+				std::cerr << "Tree object is empty: " << commit << std::endl;
+				return 1;
+			}
+			std::string sha = tree.at(0);
+			obj = repo.object_read(sha);
+		}
+
+		// Verify that path is an empty directory
+		auto dir = fs::path(path);
+		if (fs::exists(dir))
+		{
+			if (!fs::is_directory(dir))
+			{
+				std::cerr << "Not a directory: " << path << std::endl;
+				return 1;
+			}
+			if (!fs::is_empty(dir))
+			{
+				std::cerr << "Directory not empty: " << path << std::endl;
+				return 1;
+			}
+		}
+		else
+		{
+			fs::create_directories(dir);
+		}
+
+		repo.tree_checkout(obj, path);
+	}
+	else
+	{
+		std::cerr << "Usage: " << args.at(0) << " " << args.at(1) <<
+			" commit path" << std::endl;
+		status = 1;
+	}
+	return status;
+}
+
+int
 process(const std::vector<std::string> &args)
 {
 	int status = 0;
@@ -251,6 +311,10 @@ process(const std::vector<std::string> &args)
 	else if (command == "ls-tree")
 	{
 		status = cmd_ls_tree(args);
+	}
+	else if (command == "checkout")
+	{
+		status = cmd_checkout(args);
 	}
 	else
 	{

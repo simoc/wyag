@@ -44,6 +44,9 @@ public:
 		const std::string &fmt = "",
 		bool follow = true);
 
+	//! Write tree object to empty directory.
+	void tree_checkout(std::shared_ptr<GitObject> obj, const std::string &path);
+
 private:
 	std::string m_worktree;
 	fs::path m_gitdir;
