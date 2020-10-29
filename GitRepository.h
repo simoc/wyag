@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <map>
 #if __GNUC__ >= 9
 #include <filesystem>
 namespace fs = std::filesystem;
@@ -50,6 +51,11 @@ public:
 private:
 	std::string m_worktree;
 	fs::path m_gitdir;
+	//! ref to sha lookup table.
+	std::map<std::string, std::string> m_packed_refs;
+
+	//! Read all packed-refs into lookup table.
+	void read_packed_refs(const std::string &path);
 
 	//! Compute path under repo's gitdir.
 	fs::path repo_path(const std::string &path);

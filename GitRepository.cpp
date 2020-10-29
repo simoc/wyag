@@ -45,6 +45,39 @@ GitRepository::GitRepository(const std::string &path, bool force)
 			throw GitException("Unsupported repositoryformatversion: " + vers);
 		}
 	}
+
+	auto packed_refs_path = repo_file("packed-refs");
+	if (fs::exists(packed_refs_path))
+	{
+		read_packed_refs(packed_refs_path.string());
+	}
+}
+
+void
+GitRepository::read_packed_refs(const std::string &path)
+{
+	std::ifstream f(path);
+	if (f.is_open())
+	{
+		std::string line;
+		while (std::getline(f, line))
+		{
+			auto idx = line.find('#');
+			if (idx == 0)
+			{
+				// skip comment lines
+				continue;
+			}
+
+			idx = line.find(' ');
+			if (idx != std::string::npos)
+			{
+				auto packed_sha = line.substr(0, idx);
+				auto packed_ref = line.substr(idx + 1);
+				m_packed_refs.insert({packed_ref, packed_sha});
+			}
+		}
+	}
 }
 
 fs::path
