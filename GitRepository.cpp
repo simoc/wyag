@@ -81,13 +81,13 @@ GitRepository::read_packed_refs(const std::string &path)
 }
 
 fs::path
-GitRepository::repo_path(const std::string &path)
+GitRepository::repo_path(const std::string &path) const
 {
 	return m_gitdir / path;
 }
 
 fs::path
-GitRepository::repo_file(const std::string &path, bool mkdir)
+GitRepository::repo_file(const std::string &path, bool mkdir) const
 {
 	auto parentpath = fs::path(path).parent_path();
 	auto fullpath = repo_dir(parentpath, mkdir);
@@ -97,7 +97,7 @@ GitRepository::repo_file(const std::string &path, bool mkdir)
 }
 
 fs::path
-GitRepository::repo_dir(const std::string &path, bool mkdir)
+GitRepository::repo_dir(const std::string &path, bool mkdir) const
 {
 	auto fullpath = repo_path(path);
 	if (fs::exists(fullpath))
@@ -458,4 +458,83 @@ GitRepository::tree_checkout(std::shared_ptr<GitObject> obj, const std::string &
 			}
 		}
 	}
+}
+
+std::string
+GitRepository::ref_resolve(const std::string &ref) const
+{
+	std::string line;
+
+	// Is it a packed ref?
+	auto it = m_packed_refs.find(ref);
+	if (it != m_packed_refs.end())
+	{
+		return it->second;
+	}
+
+	// Accept ref with or without directory path
+	std::ifstream f(ref);
+	if (!f.is_open())
+	{
+		auto refpath = repo_file(ref);
+		f.open(refpath.string());
+	}
+	if (f.is_open())
+	{
+		std::getline(f, line);
+		auto idx = line.find_last_of('\n');
+		if (idx != std::string::npos && idx + 1 == line.size())
+		{
+			// Drop final \n ^^^^^
+			line = line.substr(0, idx);
+		}
+
+		if (line.find("ref: ") == 0)
+		{
+			line = ref_resolve(line.substr(5));
+		}
+	}
+	return line;
+}
+
+std::map<std::string, std::string>
+GitRepository::packed_ref_list() const
+{
+	return m_packed_refs;
+}
+
+std::map<std::string, GitRef>
+GitRepository::ref_list(const std::string &path) const
+{
+	std::map<std::string, GitRef> ret;
+
+	std::string path2;
+	if (path.empty())
+	{
+		path2 = repo_dir("refs");
+	}
+	else
+	{
+		path2 = path;
+	}
+
+	for(auto &f : fs::directory_iterator(path2))
+	{
+		GitRef entry;
+		auto can = f.path();
+		if (fs::is_directory(can))
+		{
+			if (!fs::is_empty(can))
+			{
+				entry.subref = ref_list(can.string());
+				ret[f.path().filename().string()] = entry;
+			}
+		}
+		else
+		{
+			entry.ref = ref_resolve(can.string());
+			ret[f.path().filename().string()] = entry;
+		}
+	}
+	return ret;
 }

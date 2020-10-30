@@ -14,6 +14,7 @@ namespace fs = std::experimental::filesystem;
 #endif
 
 #include "ConfigParser.h"
+#include "GitRef.h"
 
 class GitObject;
 
@@ -48,6 +49,12 @@ public:
 	//! Write tree object to empty directory.
 	void tree_checkout(std::shared_ptr<GitObject> obj, const std::string &path);
 
+	//! Read packed references.
+	std::map<std::string, std::string> packed_ref_list() const;
+
+	//! Read references.
+	std::map<std::string, GitRef> ref_list(const std::string &path = std::string()) const;
+
 private:
 	std::string m_worktree;
 	fs::path m_gitdir;
@@ -58,15 +65,15 @@ private:
 	void read_packed_refs(const std::string &path);
 
 	//! Compute path under repo's gitdir.
-	fs::path repo_path(const std::string &path);
+	fs::path repo_path(const std::string &path) const;
 
 	//! Same as repo_path, but create dirname(path) if absent.
 	fs::path repo_file(const std::string &path,
-		bool mkdir = false);
+		bool mkdir = false) const;
 
 	//! Same as repo_path, but mkdir(path) if absent.
 	fs::path repo_dir(const std::string &path,
-		bool mkdir = false);
+		bool mkdir = false) const;
 
 	//! Get default configuration for new repository.
 	ConfigParser repo_default_config();
@@ -76,6 +83,9 @@ private:
 
 	//! Decompress zlib compressed bytes
 	std::vector<unsigned char> uncompress_bytes(const std::vector<unsigned char> &bytes);
+
+	//! Read reference from file.
+	std::string ref_resolve(const std::string &ref) const;
 };
 
 #endif

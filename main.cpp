@@ -282,6 +282,57 @@ cmd_checkout(const std::vector<std::string> &args)
 }
 
 int
+show_ref(const std::map<std::string, GitRef> &refs,
+	bool with_hash,
+	const std::string &prefix)
+{
+	for (auto it = refs.begin(); it != refs.end(); ++it)
+	{
+		if (it->second.subref.empty() == false)
+		{
+			std::string prefix2 = prefix;
+			if (prefix2.size() > 0)
+				prefix2.append("/");
+			prefix2.append(it->first);
+
+			show_ref(it->second.subref, with_hash, prefix2);
+		}
+		else
+		{
+			if (with_hash)
+			{
+				std::cout << it->second.ref << " ";
+			}
+			if (prefix.size() > 0)
+			{
+				std::cout << prefix << "/";
+			}
+			std::cout << it->first << std::endl;
+		}
+	}
+	return 0;
+}
+
+int
+cmd_show_ref(const std::vector<std::string> &args)
+{
+	int status = 0;
+	GitRepository repo = GitRepository::repo_find();
+	auto refs = repo.ref_list();
+	status = show_ref(refs, true, "refs");
+
+	// More refs stored in packed-refs file
+	auto packed_refs = repo.packed_ref_list();
+	auto it = packed_refs.begin();
+	while (it != packed_refs.end())
+	{
+		std::cout << it->second << " " << it->first << std::endl;
+		++it;
+	}
+	return status;
+}
+
+int
 process(const std::vector<std::string> &args)
 {
 	int status = 0;
@@ -315,6 +366,10 @@ process(const std::vector<std::string> &args)
 	else if (command == "checkout")
 	{
 		status = cmd_checkout(args);
+	}
+	else if (command == "show-ref")
+	{
+		status = cmd_show_ref(args);
 	}
 	else
 	{
