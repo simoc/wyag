@@ -13,7 +13,7 @@
 #include "GitException.h"
 
 #include "zlib.h"
-#include <openssl/sha.h>
+#include <sha1.hpp>
 
 GitRepository::GitRepository(const std::string &path, bool force)
 {
@@ -348,15 +348,9 @@ GitRepository::object_write(std::shared_ptr<GitObject> obj, bool actually_write)
 	}
 
 	// Compute hash
-	std::ostringstream hex_digits;
-	unsigned char md[SHA_DIGEST_LENGTH] = {0};
-	SHA1(result.data(), result.size(), md);
-	for (size_t i = 0; i < sizeof(md); i++)
-	{
-		hex_digits << std::hex << std::setw(2) <<
-			std::setfill('0') << static_cast<unsigned int>(md[i]);
-	}
-	std::string sha = hex_digits.str();
+	SHA1 hasher;
+	hasher.update(std::string(reinterpret_cast<char *>(result.data()), result.size()));
+	std::string sha = hasher.final();
 
 	if (actually_write)
 	{
