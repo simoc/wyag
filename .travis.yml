@@ -4,4 +4,7 @@ language: cpp
 
 compiler: gcc
 
+before_install:
+  - ./install-sha1.sh
+
 script: make

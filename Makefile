@@ -2,10 +2,10 @@
 CXXFLAGS+=-std=c++17
 CXXFLAGS+=-g
 CXXFLAGS+=-Wall
+CXXFLAGS+=-Isha1
 
 LIBS+=-lstdc++
 LIBS+=-lz
-LIBS+=-lcrypto
 
 GCCVERSION=$(shell gcc -dumpversion)
 ifeq ($(GCCVERSION),9)
