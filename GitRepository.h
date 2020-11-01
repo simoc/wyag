@@ -5,7 +5,10 @@
 #include <vector>
 #include <memory>
 #include <map>
-#if __GNUC__ >= 9
+#ifdef _MSC_VER
+#include <filesystem>
+namespace fs = std::filesystem;
+#elif __GNUC__ >= 9
 #include <filesystem>
 namespace fs = std::filesystem;
 #else

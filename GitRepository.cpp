@@ -90,7 +90,7 @@ fs::path
 GitRepository::repo_file(const std::string &path, bool mkdir) const
 {
 	auto parentpath = fs::path(path).parent_path();
-	auto fullpath = repo_dir(parentpath, mkdir);
+	auto fullpath = repo_dir(parentpath.string(), mkdir);
 	if (fullpath.empty())
 		return fullpath;
 	return repo_path(path);
@@ -505,7 +505,7 @@ GitRepository::ref_list(const std::string &path) const
 	std::string path2;
 	if (path.empty())
 	{
-		path2 = repo_dir("refs");
+		path2 = repo_dir("refs").string();
 	}
 	else
 	{
