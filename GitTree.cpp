@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <tuple>
 #include <iomanip>
+#include <sstream>
 
 #include "GitTree.h"
 #include "GitException.h"
