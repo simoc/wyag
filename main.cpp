@@ -333,6 +333,41 @@ cmd_show_ref(const std::vector<std::string> &args)
 }
 
 int
+cmd_tag(const std::vector<std::string> &args)
+{
+	int status = 0;
+	GitRepository repo = GitRepository::repo_find();
+
+	if (args.size() > 2)
+	{
+		// TODO implement tag_create() logic
+	}
+	else
+	{
+		auto refs = repo.ref_list();
+		auto it = refs.find("tags");
+		if (it != refs.end())
+		{
+			show_ref(it->second.subref, false, std::string());
+		}
+
+		// More refs stored in packed-refs file
+		auto packed_refs = repo.packed_ref_list();
+		auto it2 = packed_refs.begin();
+		while (it2 != packed_refs.end())
+		{
+			if (it2->first.find("refs/tags/") == 0)
+			{
+				auto tag = it2->first.substr(10);
+				std::cout << tag << std::endl;
+			}
+			++it2;
+		}
+	}
+	return status;
+}
+
+int
 process(const std::vector<std::string> &args)
 {
 	int status = 0;
@@ -370,6 +405,10 @@ process(const std::vector<std::string> &args)
 	else if (command == "show-ref")
 	{
 		status = cmd_show_ref(args);
+	}
+	else if (command == "tag")
+	{
+		status = cmd_tag(args);
 	}
 	else
 	{
