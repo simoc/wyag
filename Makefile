@@ -13,5 +13,5 @@ else
 LIBS+=-lstdc++fs
 endif
 
-wyag: GitRepository.cpp ConfigParser.cpp GitObject.cpp GitBlob.cpp GitCommit.cpp GitTree.cpp main.cpp
+wyag: GitRepository.cpp ConfigParser.cpp GitObject.cpp GitBlob.cpp GitCommit.cpp GitTree.cpp GitTag.cpp main.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -o $@ $^ $(LIBS)

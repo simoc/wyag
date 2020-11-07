@@ -18,6 +18,10 @@ public:
 	void deserialize(const std::vector<unsigned char> &data);
 
 	std::vector<std::string> get_value(const std::string &key);
+
+protected:
+	GitCommit(GitRepository *repo, const std::string &fmt);
+
 private:
 	std::vector<unsigned char> m_blobdata;
 	std::map<std::string, std::vector<std::string> > m_dct;

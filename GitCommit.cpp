@@ -7,6 +7,11 @@ GitCommit::GitCommit(GitRepository *repo) :
 {
 }
 
+GitCommit::GitCommit(GitRepository *repo, const std::string &fmt) :
+	GitObject(repo, fmt)
+{
+}
+
 std::vector<unsigned char>
 GitCommit::serialize()
 {
